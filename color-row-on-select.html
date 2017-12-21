@@ -1,0 +1,198 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Capitec income/expenses mockup</title>
+
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/w2ui/1.4.3/w2ui.css" />
+
+  <!-- jQuery 3.0.0+ not supported by w2ui 1.4 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/w2ui/1.4.3/w2ui.js"></script>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Click row to color</h1>
+    <div class="row">
+      <div class="col-xs-12">
+        <h3>Transactions</h3>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-xs-12">
+        <div id="current-account-grid" style="height: 450px;"></div>
+      </div>
+    </div>
+
+    <div class="row">
+      <h3>Notes:</h3>
+      <ul>
+        <li><b>feature #1:</b> scale height to num rows
+          <pre>
+var height = (_grid.records.length + 1) * _grid.recordHeight + 2;
+$('#current-account-grid').height(height);
+          </pre>
+        </li>
+        <li><b>feature #2:</b> color row = have to apply class to row, and ensure it's reapplied on every refresh (window resize, column
+          resize, sort, ...)
+          <pre>
+&lt;style&gt;
+  .color-row {
+    background-color: #f44286 !important;
+  }
+&lt;/style&gt;
+
+&lt;script&gt;
+  _grid = $('#current-account-grid').w2grid({
+    // ...
+    onRefresh: function (event) {
+      if (_grid) {
+        event.onComplete = function () {
+        ResetStyling(_grid);
+        }
+      }
+    }
+  });
+
+  function ResetStyling(grid) {
+    for (let record of grid.records) {
+      var tr = $('#grid_' + grid.name + '_rec_' + w2utils.escapeId(record.recid));
+      tr.removeClass('w2ui-selected'); // remove the default w2ui selected row styling
+      if (record.rowClass) {
+        tr.addClass(record.rowClass);
+      }
+    }
+  }
+&lt;/script&gt;
+        </pre>
+        </li>
+        <li><b>bug #1:</b> prevent render artifact causing scrollbar. Bug = render glitch occurs when you mix fixed column width &amp; % column width - e.g. uncomment recid columns
+          <pre>
+.w2ui-grid-records {
+  overflow-y: hidden !important;
+}
+          </pre>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <style>
+    /* grid: hack prevent scrollbar = fix for render bug (only occurs when mix fixed column width & % column width combined - e.g. uncomment recid columns */
+
+    .w2ui-grid-records {
+      overflow-y: hidden !important;
+    }
+
+    /* grid: select color */
+
+    /*
+    .w2ui-grid .w2ui-grid-body .w2ui-grid-records table tr.w2ui-selected,
+    .w2ui-grid .w2ui-grid-body .w2ui-grid-records table tr td.w2ui-selected {
+      color: #000000 !important;
+      background-color: #1f80dd !important;
+    }
+    */
+
+    .color-row {
+      background-color: #f44286 !important;
+    }
+  </style>
+
+  <script>
+    let hardcoded = [
+      { "date": "2017/09/01", "description": "ATM WITHDRAWAL  CARD NO. 8380", "amount": -1500, "balance": 87939.59 },
+      { "date": "2017/09/01", "description": "TRANSACTION CHARGE  ", "amount": -30.2, "balance": 87909.39 },
+      { "date": "2017/09/01", "description": "DIRECT DEBIT AVERESPSEA5502AVE20RESPO83HO ", "amount": -545, "balance": 87364.39 },
+      { "date": "2017/09/01", "description": "DIRECT DEBIT SANTAM    J062004347 ", "amount": -963.44, "balance": 86400.95 },
+      { "date": "2017/09/01", "description": "DIRECT DEBIT VODACOM 0274081376 I1871409 ", "amount": -729.83, "balance": 85671.12 },
+      { "date": "2017/09/02", "description": "DIRECT DEBIT PAYMENT TO ACC47876921992180 ", "amount": -8772.21, "balance": 76898.91 },
+      { "date": "2017/09/04", "description": "DIRECT DEBIT RSAWEB    112222999 SAGEPAY ", "amount": -1276.26, "balance": 75622.65 },
+      { "date": "2017/09/07", "description": "INETBNK PAY DEBIT ABSA BANK Ivor ", "amount": -1600, "balance": 74022.65 },
+      { "date": "2017/09/08", "description": "CREDIT INTEREST  ", "amount": 4.12, "balance": 74026.77 },
+      { "date": "2017/09/08", "description": "BONUS INTEREST  ", "amount": 3.14, "balance": 74029.91 },
+      { "date": "2017/09/11", "description": "INETBNK PAY DEBIT ABSA BANK Graham Kingma ", "amount": -820, "balance": 73209.91 },
+      { "date": "2017/09/13", "description": "INETBNK PAY DEBIT ABSA BANK Bike light ", "amount": -995, "balance": 72214.91 },
+      { "date": "2017/09/13", "description": "INETBNK PAY DEBIT ABSA BANK Kleinskys picture ", "amount": -1400, "balance": 70814.91 },
+      { "date": "2017/09/16", "description": "DIRECT DEBIT GIVENGAIN ", "amount": -210, "balance": 70604.91 },
+    ];
+
+    let _grid = undefined;
+    function render_grid(transactions) {
+      // add recid
+      let i = 0;
+      transactions.forEach(element => {
+        element.recid = ++i;
+      });
+
+      // render
+      _grid = $('#current-account-grid').w2grid({
+        name: 'current-account-grid',
+        multiSelect: false,
+        columns: [
+          //{ field: 'recid', caption: 'Id', size: '5px', sortable: true },
+          { field: 'date', caption: 'Date', size: '12%', sortable: true },
+          { field: 'description', caption: 'Description', size: '56%', sortable: true },
+          { field: 'amount', caption: 'Amount', size: '12%', sortable: true },
+          { field: 'balance', caption: 'Balance', size: '20%', sortable: true },
+          //{ field: 'tag', caption: 'Tag', size: '5%', sortable: true },
+        ],
+        records: transactions,
+        onClick: function (event) {
+          let selectionBefore = _grid.get(_grid.getSelection()[0]);
+          event.onComplete = function () {
+            let selected = _grid.get(_grid.getSelection()[0]);
+            if (!selected) {
+              selected = selectionBefore;
+            }
+
+            let rowClass = 'color-row';
+            if (selected.rowClass && selected.rowClass === rowClass) {
+              // toggle off
+              selected.rowClass = undefined;
+            } else {
+              // toggle on
+              selected.rowClass = rowClass;
+            }
+
+            _grid.refresh();
+          }
+        },
+        onRefresh: function (event) {
+          console.log('refresh', event);
+          if (_grid) {
+            event.onComplete = function () {
+              ResetStyling(_grid);
+            }
+          }
+        }
+      });
+
+      // fit height
+      var height = (_grid.records.length + 1) * _grid.recordHeight + 2;
+      $('#current-account-grid').height(height);
+
+      _grid.refresh(); // hack - column width not calcualted correctly on first render
+    }
+
+    function ResetStyling(grid) {
+      for (let record of grid.records) {
+        var tr = $('#grid_' + grid.name + '_rec_' + w2utils.escapeId(record.recid));
+        tr.removeClass('w2ui-selected'); // remove the default w2ui selected row styling
+        if (record.rowClass) {
+          tr.addClass(record.rowClass);
+        }
+      }
+    }
+
+    render_grid(hardcoded);
+
+  </script>
+</body>
+
+</html>
